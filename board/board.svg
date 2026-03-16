@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="230" viewBox="0 0 200 230">
+  <!-- PCB board -->
+  <rect x="5" y="5" width="190" height="220" rx="4" fill="#2d5a27" stroke="#1a3a18" stroke-width="2"/>
+
+  <!-- Sensor opening -->
+  <circle cx="100" cy="80" r="32" fill="#1a1a1a" stroke="#444" stroke-width="1.5"/>
+  <circle cx="100" cy="80" r="25" fill="none" stroke="#555" stroke-width="0.5" stroke-dasharray="3,3"/>
+
+  <!-- H2S warning label -->
+  <rect x="45" y="130" width="110" height="26" rx="3" fill="#f0c040" stroke="#d4a030" stroke-width="1"/>
+  <text x="100" y="148" text-anchor="middle" font-family="monospace" font-size="13" font-weight="bold" fill="#1a1a1a">ZE03-H2S</text>
+
+  <!-- Winsen branding -->
+  <text x="100" y="35" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#8ab080">WINSEN</text>
+
+  <!-- Pin labels -->
+  <text x="30" y="183" text-anchor="middle" font-family="monospace" font-size="8" fill="#c0c0c0">TX</text>
+  <text x="75" y="183" text-anchor="middle" font-family="monospace" font-size="8" fill="#c0c0c0">RX</text>
+  <text x="125" y="183" text-anchor="middle" font-family="monospace" font-size="8" fill="#c0c0c0">VCC</text>
+  <text x="170" y="183" text-anchor="middle" font-family="monospace" font-size="8" fill="#c0c0c0">GND</text>
+
+  <!-- Pin pads -->
+  <rect x="20" y="188" width="20" height="22" rx="2" fill="#c0a040" stroke="#a08030" stroke-width="1"/>
+  <rect x="65" y="188" width="20" height="22" rx="2" fill="#c0a040" stroke="#a08030" stroke-width="1"/>
+  <rect x="115" y="188" width="20" height="22" rx="2" fill="#c0a040" stroke="#a08030" stroke-width="1"/>
+  <rect x="160" y="188" width="20" height="22" rx="2" fill="#c0a040" stroke="#a08030" stroke-width="1"/>
+</svg>

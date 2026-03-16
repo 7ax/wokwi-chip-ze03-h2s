@@ -1,0 +1,6 @@
+[wokwi]
+version = 1
+
+[[chip]]
+name = "ze03-h2s"
+binary = "dist/chip.wasm"

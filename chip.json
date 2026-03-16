@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "name": "ZE03-H2S",
+  "author": "7ax",
+  "license": "MIT",
+  "pins": ["TX", "RX", "VCC", "GND"],
+  "controls": [
+    {
+      "id": "h2s_ppm",
+      "label": "H\u2082S (ppm)",
+      "type": "range",
+      "min": 0,
+      "max": 100,
+      "step": 0.01
+    }
+  ]
+}

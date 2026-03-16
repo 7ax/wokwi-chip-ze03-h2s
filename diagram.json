@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "author": "7ax",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-arduino-uno", "id": "uno", "top": 0, "left": 0, "attrs": {} },
+    {
+      "type": "chip-ze03-h2s",
+      "id": "sensor1",
+      "top": -100,
+      "left": 300,
+      "attrs": { "h2s_ppm": "2.0" }
+    }
+  ],
+  "connections": [
+    ["sensor1:TX", "uno:2", "green", []],
+    ["sensor1:RX", "uno:3", "blue", []],
+    ["sensor1:VCC", "uno:5V", "red", []],
+    ["sensor1:GND", "uno:GND.1", "black", []]
+  ]
+}
