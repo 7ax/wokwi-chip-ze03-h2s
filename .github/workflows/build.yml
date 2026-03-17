@@ -17,6 +17,8 @@ jobs:
           sources: src/main.c
       - name: Copy chip.json
         run: sudo cp chip.json dist/
+      - name: Copy board files
+        run: sudo cp -r board dist/
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -24,6 +26,7 @@ jobs:
           path: |
             dist/chip.json
             dist/chip.wasm
+            dist/board/
 
   release:
     name: Release
@@ -39,7 +42,7 @@ jobs:
           name: chip
           path: chip
       - name: Create zip archive
-        run: cd chip && zip -9 ../chip.zip chip.*
+        run: cd chip && zip -9 -r ../chip.zip .
       - name: Upload release
         uses: ncipollo/release-action@v1
         with:

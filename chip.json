@@ -3,6 +3,7 @@
   "name": "ZE03-H2S",
   "author": "7ax",
   "license": "MIT",
+  "docs": "https://github.com/7ax/wokwi-chip-ze03-h2s",
   "pins": ["TX", "RX", "VCC", "GND"],
   "controls": [
     {
