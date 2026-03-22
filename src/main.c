@@ -29,6 +29,7 @@ static uint8_t ze03_checksum(const uint8_t *frame) {
 
 static uint16_t read_concentration(chip_state_t *state) {
     float ppm = attr_read_float(state->h2s_attr);
+    if (ppm != ppm) ppm = 0.0f;  /* NaN guard: avoid UB in cast */
     if (ppm < 0.0f) ppm = 0.0f;
     if (ppm > 100.0f) ppm = 100.0f;
     return (uint16_t)(ppm * 100.0f + 0.5f);
@@ -52,7 +53,10 @@ static void send_active_frame(chip_state_t *state) {
     state->tx_buf[8] = ze03_checksum(state->tx_buf);
 
     state->tx_busy = true;
-    uart_write(state->uart, state->tx_buf, ZE03_FRAME_SIZE);
+    if (!uart_write(state->uart, state->tx_buf, ZE03_FRAME_SIZE)) {
+        state->tx_busy = false;
+        printf("[ZE03-H2S] uart_write failed\n");
+    }
 }
 
 static void send_qa_response(chip_state_t *state) {
@@ -73,7 +77,10 @@ static void send_qa_response(chip_state_t *state) {
     state->tx_buf[8] = ze03_checksum(state->tx_buf);
 
     state->tx_busy = true;
-    uart_write(state->uart, state->tx_buf, ZE03_FRAME_SIZE);
+    if (!uart_write(state->uart, state->tx_buf, ZE03_FRAME_SIZE)) {
+        state->tx_busy = false;
+        printf("[ZE03-H2S] uart_write failed\n");
+    }
 }
 
 static void on_timer(void *user_data) {
@@ -111,11 +118,11 @@ static void process_command(chip_state_t *state) {
         }
         /* Mode switch: FF 01 78 MODE 00 00 00 00 CS */
         if (buf[2] == 0x78) {
-            if (buf[3] == 0x41) {
+            if (buf[3] == 0x41 && state->active_mode) {
                 state->active_mode = false;
                 timer_stop(state->active_timer);
                 printf("[ZE03-H2S] Switched to Q&A mode\n");
-            } else if (buf[3] == 0x40) {
+            } else if (buf[3] == 0x40 && !state->active_mode) {
                 state->active_mode = true;
                 timer_start(state->active_timer, ACTIVE_INTERVAL, true);
                 printf("[ZE03-H2S] Switched to active upload mode\n");
@@ -124,6 +131,13 @@ static void process_command(chip_state_t *state) {
     }
 }
 
+/*
+ * Frame resync note: after a checksum failure, rx_pos resets to 0 and any
+ * partially-consumed valid frame bytes are discarded.  This is inherent to
+ * the ZE03's single-byte (0xFF) sync protocol and matches real hardware
+ * behavior — adding a sliding-window resync would introduce more bug
+ * surface than it eliminates.
+ */
 static void on_rx_data(void *user_data, uint8_t byte) {
     chip_state_t *state = (chip_state_t *)user_data;
 
@@ -142,6 +156,10 @@ static void on_rx_data(void *user_data, uint8_t byte) {
 
 void chip_init(void) {
     chip_state_t *state = malloc(sizeof(chip_state_t));
+    if (!state) {
+        printf("[ZE03-H2S] Failed to allocate state\n");
+        return;
+    }
     memset(state, 0, sizeof(chip_state_t));
 
     state->active_mode = true;
