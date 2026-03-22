@@ -17,6 +17,9 @@ typedef struct {
     uint8_t    rx_pos;
     bool       tx_busy;
     uint8_t    tx_buf[ZE03_FRAME_SIZE];
+    uint32_t   fault_attr;
+    uint32_t   warmup_attr;
+    uint32_t   warmup_remaining;
 } chip_state_t;
 
 static uint8_t ze03_checksum(const uint8_t *frame) {
@@ -37,6 +40,9 @@ static uint16_t read_concentration(chip_state_t *state) {
 
 static void send_active_frame(chip_state_t *state) {
     uint16_t raw;
+    uint32_t fault = attr_read(state->fault_attr);
+
+    if (fault == 1) return;  /* FAULT_NO_RESPONSE */
 
     if (state->tx_busy) return;
 
@@ -52,6 +58,8 @@ static void send_active_frame(chip_state_t *state) {
     state->tx_buf[7] = 0x00;
     state->tx_buf[8] = ze03_checksum(state->tx_buf);
 
+    if (fault == 2) state->tx_buf[8] ^= 0xFF;  /* FAULT_BAD_CHECKSUM */
+
     state->tx_busy = true;
     if (!uart_write(state->uart, state->tx_buf, ZE03_FRAME_SIZE)) {
         state->tx_busy = false;
@@ -61,6 +69,9 @@ static void send_active_frame(chip_state_t *state) {
 
 static void send_qa_response(chip_state_t *state) {
     uint16_t raw;
+    uint32_t fault = attr_read(state->fault_attr);
+
+    if (fault == 1) return;  /* FAULT_NO_RESPONSE */
 
     if (state->tx_busy) return;
 
@@ -76,6 +87,8 @@ static void send_qa_response(chip_state_t *state) {
     state->tx_buf[7] = 0x00;
     state->tx_buf[8] = ze03_checksum(state->tx_buf);
 
+    if (fault == 2) state->tx_buf[8] ^= 0xFF;  /* FAULT_BAD_CHECKSUM */
+
     state->tx_busy = true;
     if (!uart_write(state->uart, state->tx_buf, ZE03_FRAME_SIZE)) {
         state->tx_busy = false;
@@ -85,6 +98,15 @@ static void send_qa_response(chip_state_t *state) {
 
 static void on_timer(void *user_data) {
     chip_state_t *state = (chip_state_t *)user_data;
+
+    if (state->warmup_remaining > 0) {
+        state->warmup_remaining--;
+        if (state->warmup_remaining == 0) {
+            printf("[ZE03-H2S] Warm-up complete\n");
+        }
+        return;
+    }
+
     if (state->active_mode) {
         send_active_frame(state);
     }
@@ -97,6 +119,8 @@ static void on_write_done(void *user_data) {
 
 static void process_command(chip_state_t *state) {
     uint8_t *buf = state->rx_buf;
+
+    if (state->warmup_remaining > 0) return;
 
     if (buf[0] != 0xFF) return;
     if (buf[8] != ze03_checksum(buf)) {
@@ -164,6 +188,9 @@ void chip_init(void) {
 
     state->active_mode = true;
     state->h2s_attr = attr_init_float("h2s_ppm", 2.0f);
+    state->fault_attr = attr_init("fault_mode", 0);
+    state->warmup_attr = attr_init("warmup_ticks", 0);
+    state->warmup_remaining = attr_read(state->warmup_attr);
 
     pin_t tx_pin = pin_init("TX", OUTPUT);
     pin_t rx_pin = pin_init("RX", INPUT);
@@ -187,5 +214,6 @@ void chip_init(void) {
     state->active_timer = timer_init(&timer_cfg);
     timer_start(state->active_timer, ACTIVE_INTERVAL, true);
 
-    printf("[ZE03-H2S] Initialized (active upload mode, default 2.00 ppm)\n");
+    printf("[ZE03-H2S] Initialized (active upload mode, default 2.00 ppm, warmup=%lu)\n",
+           (unsigned long)state->warmup_remaining);
 }
